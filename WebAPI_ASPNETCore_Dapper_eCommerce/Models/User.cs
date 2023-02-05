@@ -11,5 +11,8 @@
         public string Mother { get; set; }
         public string Status { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
+        public Contact Contact { get; set; }
+        public ICollection<DeliveryAddress> DeliveryAddresses { get; set;}
+        public ICollection<Department> Departments { get; set; }
     }
 }
