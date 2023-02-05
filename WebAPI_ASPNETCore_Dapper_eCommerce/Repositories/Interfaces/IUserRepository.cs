@@ -1,4 +1,5 @@
-﻿using WebAPI_ASPNETCore_Dapper_eCommerce.Models;
+﻿using System.Data.SqlClient;
+using WebAPI_ASPNETCore_Dapper_eCommerce.Models;
 
 namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories.Interfaces
 {
