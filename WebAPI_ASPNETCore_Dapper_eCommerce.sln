@@ -5,6 +5,11 @@ VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebAPI_ASPNETCore_Dapper_eCommerce", "WebAPI_ASPNETCore_Dapper_eCommerce\WebAPI_ASPNETCore_Dapper_eCommerce.csproj", "{745E92CC-4F22-4525-BDBF-E1C4F857B15C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{05C5B451-5315-4677-BFE0-7D4E3AF14F24}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
