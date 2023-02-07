@@ -18,7 +18,11 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
 
         public List<User> Get()
         {
+            //Single table
+            //return _connection.Query<User>("SELECT * FROM Users").ToList();
 
+            /*
+            //User with contact
             string sql = "SELECT * FROM Users U LEFT JOIN Contacts C ON C.UserId = U.Id";
 
             return _connection.Query<User, Contact, User>(sql,
@@ -27,14 +31,44 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
                    user.Contact = contact;
                    return user;
                }).ToList();
+            */
 
-            //return _connection.Query<User>("SELECT * FROM Users").ToList();
+            //User with Contact and Delivery Adressess
+            string sql = "SELECT * FROM Users U LEFT JOIN Contacts C ON C.UserId = U.Id LEFT JOIN DeliveryAddress DA ON DA.UserId = U.Id";
+
+            List<User> users = new();
+
+            _connection.Query<User, Contact, DeliveryAddress, User>(sql,
+                (user, contact, deliveryAddress) =>
+                {
+                    if (users.SingleOrDefault(u => u.Id == user.Id) == null)
+                    {
+                        user.DeliveryAddresses = new List<DeliveryAddress>();
+                        user.Contact = contact;
+                        users.Add(user);
+                    }
+                    else
+                    {
+                        user = users.SingleOrDefault(u => u.Id == user.Id);
+
+                    }
+
+                    if (user != null && deliveryAddress != null)
+                         user.DeliveryAddresses.Add(deliveryAddress);
+
+                    return user;
+                });
+
+            return users;
 
         }
 
         public User Get(int id)
         {
-         
+            //Single table
+            //return _connection.QuerySingleOrDefault<User>("SELECT * FROM Users WHERE Id = @Id", new { Id = id});
+
+            /*
             string sql = "SELECT * FROM Users U LEFT JOIN Contacts C ON C.UserId = U.Id WHERE U.Id = @Id";
 
             return _connection.Query<User, Contact, User>(sql, 
@@ -44,8 +78,36 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
                     return user;
                 },
                 new { Id = id }).SingleOrDefault();
+            */
 
-            //return _connection.QuerySingleOrDefault<User>("SELECT * FROM Users WHERE Id = @Id", new { Id = id});
+            //User with Contact and Delivery Addresses
+            string sql = "SELECT * FROM Users U LEFT JOIN Contacts C ON C.UserId = U.Id LEFT JOIN DeliveryAddress DA ON DA.UserId = U.Id WHERE U.Id = @Id";
+
+            List<User> users = new();
+
+            _connection.Query<User, Contact, DeliveryAddress, User>(sql,
+                (user, contact, deliveryAddress) =>
+                {
+                    if (users.SingleOrDefault(u => u.Id == user.Id) == null)
+                    {
+                        user.DeliveryAddresses = new List<DeliveryAddress>();
+                        user.Contact = contact;
+                        users.Add(user);
+                    }
+                    else
+                    {
+                        user = users.SingleOrDefault(u => u.Id == user.Id);
+
+                    }
+
+                    if (user != null && deliveryAddress != null)
+                        user.DeliveryAddresses.Add(deliveryAddress);
+
+                    return user;
+                },
+                new { Id = id });
+
+            return users.SingleOrDefault();
 
         }
 
@@ -66,6 +128,18 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
 
                     user.Contact.UserId = user.Id;
                     user.Contact.Id = _connection.Query<int>(sqlContact, user.Contact, transaction).Single();
+                }
+
+                if (user.DeliveryAddresses != null && user.DeliveryAddresses.Count() > 0)
+                {
+                    string sqlAddress = "INSERT INTO DeliveryAddress (UserId, AddressTitle, Zipcode, State, City, District, Address, Number, Address2) VALUES (@UserId, @AddressTitle, @Zipcode, @State, @City, @District, @Address, @Number, @Address2); SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                    foreach (var address in user.DeliveryAddresses)
+                    {
+                        address.UserId = user.Id;
+                        address.Id = _connection.Query<int>(sqlAddress, address, transaction).Single();
+
+                    }
                 }
 
                 transaction.Commit();
@@ -106,6 +180,26 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
                     string sqlContact = "UPDATE Contacts SET Phone = @Phone, CellPhone = @CellPhone WHERE Id = @Id;";
 
                     _connection.Execute(sqlContact, user.Contact, transaction);
+                }
+
+                if (user.DeliveryAddresses != null)
+                {
+                    string sqlDeleteAddress = "DELETE FROM DeliveryAddress WHERE UserId = @Id;";
+
+                    _connection.Execute(sqlDeleteAddress, user, transaction);
+
+                }
+
+                if (user.DeliveryAddresses != null && user.DeliveryAddresses.Count() > 0)
+                {
+                    string sqlAddress = "INSERT INTO DeliveryAddress (UserId, AddressTitle, Zipcode, State, City, District, Address, Number, Address2) VALUES (@UserId, @AddressTitle, @Zipcode, @State, @City, @District, @Address, @Number, @Address2); SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                    foreach (var address in user.DeliveryAddresses)
+                    {
+                        address.UserId = user.Id;
+                        address.Id = _connection.Query<int>(sqlAddress, address, transaction).Single();
+
+                    }
                 }
 
                 transaction.Commit();
