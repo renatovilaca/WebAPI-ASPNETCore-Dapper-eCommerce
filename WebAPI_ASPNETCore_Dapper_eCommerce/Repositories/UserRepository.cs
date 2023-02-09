@@ -18,6 +18,8 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
 
         public List<User> Get()
         {
+            //Keeping commented codes for example
+
             //Single table
             //return _connection.Query<User>("SELECT * FROM Users").ToList();
 
@@ -34,6 +36,7 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
             */
 
             //User with Contact and Delivery Adressess
+            /*
             string sql = "SELECT * FROM Users U LEFT JOIN Contacts C ON C.UserId = U.Id LEFT JOIN DeliveryAddress DA ON DA.UserId = U.Id";
 
             List<User> users = new();
@@ -60,11 +63,46 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
                 });
 
             return users;
+            */
+
+            //User with Contact and Delivery Adressess and Departments
+            string sql = "SELECT U.*,C.*,DA.*,D.* FROM Users U LEFT JOIN Contacts C ON C.UserId = U.Id LEFT JOIN DeliveryAddress DA ON DA.UserId = U.Id LEFT JOIN UsersDepartments UD ON UD.UserId = U.Id LEFT JOIN Departments D ON UD.DepartmentId = D.Id";
+
+            List<User> users = new();
+
+            _connection.Query<User, Contact, DeliveryAddress, Department, User>(sql,
+                (user, contact, deliveryAddress, department) =>
+                {
+                    if (users.SingleOrDefault(u => u.Id == user.Id) == null)
+                    {
+                        user.Departments = new List<Department>();
+                        user.DeliveryAddresses = new List<DeliveryAddress>();
+
+                        user.Contact = contact;
+                        users.Add(user);
+                    }
+                    else
+                    {
+                        user = users.SingleOrDefault(u => u.Id == user.Id);
+                    }
+
+                    if (user.DeliveryAddresses.SingleOrDefault(d => d.Id == deliveryAddress.Id) == null)
+                        user.DeliveryAddresses.Add(deliveryAddress);
+
+                    if (user.Departments.SingleOrDefault(d => d.Id == department.Id) == null)
+                        user.Departments.Add(department);
+
+                    return user;
+                });
+
+            return users;
 
         }
 
         public User Get(int id)
         {
+            //Keeping commented codes for example
+
             //Single table
             //return _connection.QuerySingleOrDefault<User>("SELECT * FROM Users WHERE Id = @Id", new { Id = id});
 
@@ -81,6 +119,7 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
             */
 
             //User with Contact and Delivery Addresses
+            /*
             string sql = "SELECT * FROM Users U LEFT JOIN Contacts C ON C.UserId = U.Id LEFT JOIN DeliveryAddress DA ON DA.UserId = U.Id WHERE U.Id = @Id";
 
             List<User> users = new();
@@ -108,6 +147,40 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
                 new { Id = id });
 
             return users.SingleOrDefault();
+            */
+
+            string sql = "SELECT U.*,C.*,DA.*,D.* FROM Users U LEFT JOIN Contacts C ON C.UserId = U.Id LEFT JOIN DeliveryAddress DA ON DA.UserId = U.Id LEFT JOIN UsersDepartments UD ON UD.UserId = U.Id LEFT JOIN Departments D ON UD.DepartmentId = D.Id WHERE U.Id = @Id";
+
+            List<User> users = new();
+
+            _connection.Query<User, Contact, DeliveryAddress, Department, User>(sql,
+                (user, contact, deliveryAddress, department) =>
+                {
+                    if (users.SingleOrDefault(u => u.Id == user.Id) == null)
+                    {
+                        user.Departments = new List<Department>();
+                        user.DeliveryAddresses = new List<DeliveryAddress>();
+
+                        user.Contact = contact;
+                        users.Add(user);
+                    }
+                    else
+                    {
+                        user = users.SingleOrDefault(u => u.Id == user.Id);
+                    }
+
+                    if (user.DeliveryAddresses.SingleOrDefault(d => d.Id == deliveryAddress.Id) == null)
+                        user.DeliveryAddresses.Add(deliveryAddress);
+
+                    if (user.Departments.SingleOrDefault(d => d.Id == department.Id) == null)
+                        user.Departments.Add(department);
+
+                    return user;
+                },
+                new { Id = id });
+
+            return users.SingleOrDefault();
+
 
         }
 
@@ -138,6 +211,17 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
                     {
                         address.UserId = user.Id;
                         address.Id = _connection.Query<int>(sqlAddress, address, transaction).Single();
+
+                    }
+                }
+
+                if (user.Departments != null & user.Departments.Count()> 0)
+                {
+                    string sqlUserDepartment = "INSERT INTO UsersDepartments (UserId, DepartmentId) VALUES (@UserId, @DepartmentId);";
+
+                    foreach (var userDepartment in user.Departments)
+                    {
+                        _connection.Execute(sqlUserDepartment, new { UserId = user.Id, DepartmentId = userDepartment.Id }, transaction);
 
                     }
                 }
@@ -198,6 +282,25 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Repositories
                     {
                         address.UserId = user.Id;
                         address.Id = _connection.Query<int>(sqlAddress, address, transaction).Single();
+
+                    }
+                }
+
+                if (user.Departments != null)
+                {
+                    string sqlDeleteDepartments = "DELETE FROM UsersDepartments WHERE UserId = @Id;";
+
+                    _connection.Execute(sqlDeleteDepartments, user, transaction);
+
+                }
+
+                if (user.Departments != null & user.Departments.Count() > 0)
+                {
+                    string sqlUserDepartment = "INSERT INTO UsersDepartments (UserId, DepartmentId) VALUES (@UserId, @DepartmentId);";
+
+                    foreach (var userDepartment in user.Departments)
+                    {
+                        _connection.Execute(sqlUserDepartment, new { UserId = user.Id, DepartmentId = userDepartment.Id }, transaction);
 
                     }
                 }
