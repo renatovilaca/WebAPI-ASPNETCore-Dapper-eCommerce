@@ -3,6 +3,8 @@ using System.Data.SqlClient;
 using System.Data;
 using Dapper;
 using WebAPI_ASPNETCore_Dapper_eCommerce.Models;
+using Dapper.FluentMap;
+using WebAPI_ASPNETCore_Dapper_eCommerce.Mappers;
 
 namespace WebAPI_ASPNETCore_Dapper_eCommerce.Controllers
 {
@@ -61,6 +63,20 @@ namespace WebAPI_ASPNETCore_Dapper_eCommerce.Controllers
             var user = _connection.Query<User>("GetUserById", new { Id = id }, commandType: CommandType.StoredProcedure).SingleOrDefault();
 
             return Ok(user);
+        }
+
+        [HttpGet("Mapper/UserCustom")]
+        public IActionResult MapperUserCustom()
+        {
+            FluentMapper.Initialize(config =>
+            {
+                config.AddMap(new UserCustomMap());
+
+            });
+
+            var users = _connection.Query<UserCustom>("SELECT * FROM Users");
+
+            return Ok(users);
         }
 
     }
